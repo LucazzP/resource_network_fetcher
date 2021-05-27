@@ -5,9 +5,8 @@ import 'status.dart';
 
 import 'resource.dart';
 
-class NetworkBoundResources {
-  @Deprecated('Use the static methods instead')
-  NetworkBoundResources();
+abstract class NetworkBoundResources {
+  NetworkBoundResources._();
 
   static Future<Resource<ResultType>> asFuture<ResultType, RequestType>({
     Future<RequestType> Function()? loadFromDb,
