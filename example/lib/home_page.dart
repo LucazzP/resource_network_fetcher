@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:resource_network_fetcher/resource_network_fetcher.dart';
+import 'package:shimmer/shimmer.dart';
+
+import 'home_controller.dart';
+import 'todo.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key? key, required this.title}) : super(key: key);
   final String title;
+  final controller = HomeController();
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<HomePage> {
-  int _counter = 0;
+  void onPressedError() {
+    widget.controller.getListTodosError();
+  }
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  void onPressed() {
+    widget.controller.getListTodos();
   }
 
   @override
@@ -23,25 +29,47 @@ class _MyHomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ElevatedButton(
+            onPressed: onPressedError,
+            child: Text('Make error request'),
+          ),
+          ElevatedButton(
+            onPressed: onPressed,
+            child: Text('Make request'),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: ValueListenableBuilder(
+        valueListenable: widget.controller.listTodos,
+        builder: (context, Resource<List<Todo>> value, child) {
+          return ListViewResourceWidget<Todo>(
+            resource: value,
+            loadingTileQuantity: 2,
+            refresh: widget.controller.getListTodos,
+            loadingTile: Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: CheckboxListTile(
+                title: Container(
+                  width: double.infinity,
+                  height: 8.0,
+                  color: Colors.white,
+                ),
+                value: false,
+                onChanged: (value) {},
+              ),
+            ),
+            tileMapper: (data) => CheckboxListTile(
+              title: Text(data.title),
+              value: data.completed,
+              onChanged: (value) {},
+            ),
+          );
+        },
+      ),
     );
   }
 }

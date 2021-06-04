@@ -36,6 +36,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
   final bool reorderableList;
   final ReorderCallback? onReorder;
   final int loadingTileQuantity;
+  final String? textTryAgain;
 
   const ListViewResourceWidget({
     Key? key,
@@ -53,7 +54,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.controller,
     this.primary,
     this.physics,
-    this.shrinkWrap = true,
+    this.shrinkWrap = false,
     this.itemExtent,
     this.addAutomaticKeepAlives = true,
     this.addRepaintBoundaries = true,
@@ -66,6 +67,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.loadingTileQuantity = 2,
     this.separatorBuilder,
+    this.textTryAgain,
   })  : reorderableList = false,
         onReorder = null,
         super(key: key);
@@ -83,7 +85,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.padding,
     this.controller,
     this.scrollDirection = Axis.vertical,
-    this.shrinkWrap = true,
+    this.shrinkWrap = false,
     this.loadingTileQuantity = 2,
     this.separatorBuilder,
     this.physics,
@@ -94,6 +96,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.cacheExtent,
     this.clipBehavior = Clip.hardEdge,
     this.primary,
+    this.textTryAgain,
   })  : useSliver = false,
         itemExtent = null,
         semanticChildCount = null,
@@ -118,6 +121,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.addRepaintBoundaries = true,
     this.addSemanticIndexes = true,
     this.loadingTileQuantity = 2,
+    this.textTryAgain,
   })  : padding = null,
         scrollDirection = Axis.vertical,
         reverse = false,
@@ -230,12 +234,11 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     switch (resource.status) {
       case Status.loading:
         for (var i = 0; i < loadingTileQuantity; i++) {
-          topWidgets.add(loadingTile);
+          listWidgets.add(loadingTile);
         }
         break;
       case Status.success:
-        if (emptyWidget != null &&
-            (resource.data == null || (resource.data ?? []).isEmpty)) {
+        if (emptyWidget != null && (resource.data == null || (resource.data ?? []).isEmpty)) {
           listWidgets.add(emptyWidget ?? const SizedBox.shrink());
         }
         break;
@@ -246,6 +249,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
               : DefaultErrorWidget(
                   resource.message,
                   onTryAgain: refresh,
+                  textTryAgain: textTryAgain,
                   key: UniqueKey(),
                 ),
         );

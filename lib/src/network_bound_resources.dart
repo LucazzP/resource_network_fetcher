@@ -12,12 +12,11 @@ abstract class NetworkBoundResources {
     Future<RequestType> Function()? loadFromDb,
     bool Function(RequestType? data)? shouldFetch,
     required Future<RequestType> Function() createCall,
-    ResultType Function(RequestType? result)? processResponse,
+    FutureOr<ResultType> Function(RequestType? result)? processResponse,
     Future Function(RequestType? item)? saveCallResult,
   }) {
     assert(
-      RequestType == ResultType ||
-          (!(RequestType == ResultType) && processResponse != null),
+      RequestType == ResultType || (!(RequestType == ResultType) && processResponse != null),
       'You need to specify the `processResponse` when the types are different',
     );
     processResponse ??= (value) => value as ResultType;
@@ -25,51 +24,44 @@ abstract class NetworkBoundResources {
       final value = loadFromDb == null ? null : await loadFromDb();
       final _shouldFetch = shouldFetch == null ? true : shouldFetch(value);
       return processResponse!(
-        _shouldFetch
-            ? await _fetchFromNetwork(createCall, saveCallResult, value)
-            : value,
+        _shouldFetch ? await _fetchFromNetwork(createCall, saveCallResult, value) : value,
       );
     });
   }
 
   static Stream<Resource<ResultType>> asSimpleStream<ResultType, RequestType>({
     required Stream<RequestType> Function() createCall,
-    ResultType Function(RequestType? result)? processResponse,
+    FutureOr<ResultType> Function(RequestType result)? processResponse,
   }) async* {
     assert(
-      RequestType == ResultType ||
-          (!(RequestType == ResultType) && processResponse != null),
+      RequestType == ResultType || (!(RequestType == ResultType) && processResponse != null),
       'You need to specify the `processResponse` when the types are different',
     );
     processResponse ??= (value) => value as ResultType;
     var lastResult = Resource<ResultType>.loading();
     yield lastResult;
-    yield* createCall().map(
-      (event) {
-        lastResult =
-            lastResult.addData(Status.success, processResponse!(event));
+    yield* createCall().asyncMap(
+      (event) async {
+        lastResult = lastResult.addData(Status.success, await processResponse!(event));
         return lastResult;
       },
     );
   }
 
-  static Stream<Resource<ResultType>>
-      asResourceStream<ResultType, RequestType>({
+  static Stream<Resource<ResultType>> asResourceStream<ResultType, RequestType>({
     required Stream<Resource<RequestType>> Function() createCall,
-    ResultType Function(RequestType? result)? processResponse,
+    FutureOr<ResultType> Function(RequestType? result)? processResponse,
   }) async* {
     assert(
-      RequestType == ResultType ||
-          (!(RequestType == ResultType) && processResponse != null),
+      RequestType == ResultType || (!(RequestType == ResultType) && processResponse != null),
       'You need to specify the `processResponse` when the types are different',
     );
     processResponse ??= (value) => value as ResultType;
     var lastResult = Resource<ResultType>.loading();
     yield lastResult;
-    yield* createCall().map(
-      (event) {
-        lastResult = lastResult.addData(
-            event.status, processResponse!(event.data),
+    yield* createCall().asyncMap(
+      (event) async {
+        lastResult = lastResult.addData(event.status, await processResponse!(event.data),
             error: event.error);
         return lastResult;
       },
@@ -81,12 +73,11 @@ abstract class NetworkBoundResources {
     Future<RequestType> Function()? loadFromDbFuture,
     bool Function(RequestType? data)? shouldFetch,
     required Future<RequestType> Function() createCall,
-    ResultType Function(RequestType? result)? processResponse,
+    FutureOr<ResultType> Function(RequestType? result)? processResponse,
     Future Function(RequestType item)? saveCallResult,
   }) {
     assert(
-      RequestType == ResultType ||
-          (!(RequestType == ResultType) && processResponse != null),
+      RequestType == ResultType || (!(RequestType == ResultType) && processResponse != null),
       'You need to specify the `processResponse` when the types are different',
     );
     assert(
@@ -113,8 +104,8 @@ abstract class NetworkBoundResources {
 
     _sinkAdd(_result.sink, Resource.loading(), _resultIsClosed);
 
-    Future<void> _fetchData(Future<RequestType> Function() event,
-        Sink<Resource<ResultType>> sink) async {
+    Future<void> _fetchData(
+        Future<RequestType> Function() event, Sink<Resource<ResultType>> sink) async {
       RequestType? _event;
       Future<ResultType> proccessEvent() async {
         try {
@@ -143,13 +134,12 @@ abstract class NetworkBoundResources {
               var result = await _fetchFromNetwork(createCall, saveCallResult);
               // print("Fetching success");
               fetchNetworkResource =
-                  Resource<ResultType>.success(data: processResponse!(result));
+                  Resource<ResultType>.success(data: await processResponse!(result));
               _sinkAdd(sink, fetchNetworkResource, _resultIsClosed);
               // ignore: avoid_catches_without_on_clauses
             } catch (e) {
               // print("Fetching failed");
-              fetchNetworkResource =
-                  Resource<ResultType>.failed(data: null, error: e);
+              fetchNetworkResource = Resource<ResultType>.failed(data: null, error: e);
               _sinkAdd(sink, fetchNetworkResource, _resultIsClosed);
             }
           }),
@@ -160,25 +150,20 @@ abstract class NetworkBoundResources {
         final eventResult = await proccessEvent();
         if (shouldFetch(_event)) {
           // print("Fetch data and call loading");
-          _sinkAdd(sink, Resource<ResultType>.loading(data: eventResult),
-              _resultIsClosed);
+          _sinkAdd(sink, Resource<ResultType>.loading(data: eventResult), _resultIsClosed);
           try {
             var result = await _fetchFromNetwork(createCall, saveCallResult);
             // print("Fetching success");
-            _sinkAdd(
-                sink,
-                Resource<ResultType>.success(data: processResponse!(result)),
+            _sinkAdd(sink, Resource<ResultType>.success(data: await processResponse!(result)),
                 _resultIsClosed);
             // ignore: avoid_catches_without_on_clauses
           } catch (e) {
             // print("Fetching failed");
-            _sinkAdd(sink, Resource<ResultType>.failed(data: null, error: e),
-                _resultIsClosed);
+            _sinkAdd(sink, Resource<ResultType>.failed(data: null, error: e), _resultIsClosed);
           }
         } else {
           // print("Fetching data its not necessary");
-          _sinkAdd(sink, Resource<ResultType>.success(data: eventResult),
-              _resultIsClosed);
+          _sinkAdd(sink, Resource<ResultType>.success(data: eventResult), _resultIsClosed);
         }
       }
     }
@@ -190,11 +175,9 @@ abstract class NetworkBoundResources {
         ),
       );
 
-      localListener = localStream
-          .listen((value) => _sinkAdd(_result.sink, value, _resultIsClosed));
+      localListener = localStream.listen((value) => _sinkAdd(_result.sink, value, _resultIsClosed));
     } else if (loadFromDbFuture != null) {
-      _fetchData(loadFromDbFuture, _result.sink)
-          .then((value) => _result.close());
+      _fetchData(loadFromDbFuture, _result.sink).then((value) => _result.close());
     }
 
     // print("Call loading...");
@@ -205,8 +188,7 @@ abstract class NetworkBoundResources {
       if (lastResult == null) {
         lastResult = event;
       } else {
-        lastResult =
-            lastResult!.addData(event.status, event.data, error: event.error);
+        lastResult = lastResult!.addData(event.status, event.data, error: event.error);
       }
       return lastResult!;
     });
@@ -222,8 +204,7 @@ abstract class NetworkBoundResources {
   }
 
   static Future<RequestType> _fetchFromNetwork<ResultType, RequestType>(
-      Future<RequestType> Function() createCall,
-      Future Function(RequestType item)? saveCallResult,
+      Future<RequestType> Function() createCall, Future Function(RequestType item)? saveCallResult,
       [RequestType? unconfirmedResult]) async {
     if (saveCallResult != null && unconfirmedResult != null) {
       await saveCallResult(unconfirmedResult);

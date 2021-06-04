@@ -14,6 +14,7 @@ class ResourceWidget<T> extends StatelessWidget {
   final Widget Function(T? data) doneWidget;
   final Widget Function(T? data)? loadingWithDataWidget;
   final Future<void> Function()? refresh;
+  final String? textTryAgain;
 
   const ResourceWidget({
     Key? key,
@@ -25,6 +26,7 @@ class ResourceWidget<T> extends StatelessWidget {
     this.showErrorWidget = false,
     this.errorWithDataWidget,
     this.loadingWithDataWidget,
+    this.textTryAgain,
   }) : super(key: key);
 
   @override
@@ -39,14 +41,14 @@ class ResourceWidget<T> extends StatelessWidget {
         return doneWidget(resource.data);
       case Status.failed:
         if (errorWithDataWidget != null && resource.data != null) {
-          return errorWithDataWidget!(
-              resource.error ?? const AppException(), resource.data);
+          return errorWithDataWidget!(resource.error ?? const AppException(), resource.data);
         }
         return showErrorWidget
             ? errorWidget == null
                 ? DefaultErrorWidget(
                     resource.message,
                     onTryAgain: refresh!,
+                    textTryAgain: textTryAgain,
                   )
                 : errorWidget!(resource.error ?? const AppException())
             : doneWidget(resource.data);

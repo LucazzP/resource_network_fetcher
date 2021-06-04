@@ -22,11 +22,11 @@ class Resource<T> {
   bool get isFailed => status == Status.failed;
   bool get isLoading => status == Status.loading;
 
-  Resource({this.data, required this.status, this.error})
+  Resource({required this.data, required this.status, this.error})
       : metaData = ResourceMetaData<T>(data: data);
 
   Resource._({
-    this.data,
+    required this.data,
     required this.status,
     this.error,
     required this.metaData,

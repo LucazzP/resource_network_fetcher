@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class DefaultErrorWidget extends StatelessWidget {
   final String error;
   final VoidCallback? onTryAgain;
+  final String? textTryAgain;
 
   const DefaultErrorWidget(
     this.error, {
     Key? key,
     this.onTryAgain,
+    this.textTryAgain,
   }) : super(key: key);
 
   @override
@@ -38,9 +40,8 @@ class DefaultErrorWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: onTryAgain,
               child: Text(
-                'Tentar novamente',
-                style:
-                    TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                textTryAgain ?? 'Try again',
+                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
               ),
             ),
           SizedBox(
