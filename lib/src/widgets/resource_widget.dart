@@ -41,7 +41,8 @@ class ResourceWidget<T> extends StatelessWidget {
         return doneWidget(resource.data);
       case Status.failed:
         if (errorWithDataWidget != null && resource.data != null) {
-          return errorWithDataWidget!(resource.error ?? const AppException(), resource.data);
+          return errorWithDataWidget!(
+              resource.error ?? const AppException(), resource.data);
         }
         return showErrorWidget
             ? errorWidget == null

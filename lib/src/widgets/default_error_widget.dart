@@ -41,7 +41,8 @@ class DefaultErrorWidget extends StatelessWidget {
               onPressed: onTryAgain,
               child: Text(
                 textTryAgain ?? 'Try again',
-                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+                style:
+                    TextStyle(color: Theme.of(context).colorScheme.onPrimary),
               ),
             ),
           SizedBox(

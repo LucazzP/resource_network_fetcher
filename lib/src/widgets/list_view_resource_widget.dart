@@ -238,7 +238,8 @@ class ListViewResourceWidget<T> extends StatelessWidget {
         }
         break;
       case Status.success:
-        if (emptyWidget != null && (resource.data == null || (resource.data ?? []).isEmpty)) {
+        if (emptyWidget != null &&
+            (resource.data == null || (resource.data ?? []).isEmpty)) {
           listWidgets.add(emptyWidget ?? const SizedBox.shrink());
         }
         break;
