@@ -9,7 +9,8 @@ import '../status.dart';
 class ListViewResourceWidget<T> extends StatelessWidget {
   final bool useSliver;
   final Resource<List<T>> resource;
-  final Widget loadingTile;
+  final Widget? loadingTile;
+  final Widget Function()? loadingTileBuilder;
   final Widget Function(T data) tileMapper;
   final Widget Function(int index, Widget tile)? separatorBuilder;
   final Widget? emptyWidget;
@@ -70,12 +71,13 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.textTryAgain,
   })  : reorderableList = false,
         onReorder = null,
+        loadingTileBuilder = null,
         super(key: key);
 
   const ListViewResourceWidget.reorderable({
     Key? key,
     required this.resource,
-    required this.loadingTile,
+    required this.loadingTileBuilder,
     required this.tileMapper,
     required this.onReorder,
     this.refresh,
@@ -104,6 +106,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
         addRepaintBoundaries = true,
         addSemanticIndexes = true,
         reorderableList = onReorder != null,
+        loadingTile = null,
         super(key: key);
 
   const ListViewResourceWidget.sliver({
@@ -138,6 +141,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
         clipBehavior = Clip.hardEdge,
         reorderableList = false,
         onReorder = null,
+        loadingTileBuilder = null,
         super(key: key);
 
   @override
@@ -234,7 +238,12 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     switch (resource.status) {
       case Status.loading:
         for (var i = 0; i < loadingTileQuantity; i++) {
-          listWidgets.add(loadingTile);
+          if(loadingTile != null) {
+            listWidgets.add(loadingTile!);
+          }
+          if(loadingTileBuilder != null) {
+            listWidgets.add(loadingTileBuilder!());
+          }
         }
         break;
       case Status.success:

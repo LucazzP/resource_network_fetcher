@@ -1,6 +1,6 @@
 name: resource_network_fetcher
 description: Uses the NetworkBoundResources to control the offline-first or only to centralize the errors from fetching from the network or any other function.
-version: 0.1.0
+version: 1.0.0
 homepage: https://polazzo.dev/
 repository: https://github.com/LucazzP/resource_network_fetcher
 issue_tracker: https://github.com/LucazzP/resource_network_fetcher/issues
