@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:resource_network_fetcher/src/widgets/default_error_widget.dart';
@@ -99,8 +101,8 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     this.clipBehavior = Clip.hardEdge,
     this.primary,
     this.textTryAgain,
-  })  : useSliver = false,
-        itemExtent = null,
+    this.useSliver = false,
+  })  : itemExtent = null,
         semanticChildCount = null,
         addAutomaticKeepAlives = true,
         addRepaintBoundaries = true,
@@ -148,19 +150,34 @@ class ListViewResourceWidget<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget child;
     final _topWidgets = topWidgets ?? <Widget>[];
-    final list = _generateList(resource, _topWidgets);
 
     if (useSliver) {
-      child = SliverList(
-        delegate: SliverChildListDelegate.fixed(
-          list,
-          addAutomaticKeepAlives: addAutomaticKeepAlives,
-          addRepaintBoundaries: addRepaintBoundaries,
-          addSemanticIndexes: addSemanticIndexes,
-        ),
-      );
+      if (reorderableList) {
+        child = SliverReorderableList(
+          onReorder: onReorder ?? (a, b) {},
+          itemBuilder: _itemBuilder,
+          itemCount: _listLenght,
+          proxyDecorator: _proxyDecorator,
+        );
+      } else {
+        child = SliverList(
+          delegate: SliverChildBuilderDelegate(
+            (context, index) {
+              return _generateListBuilder(resource, _topWidgets, index);
+            },
+            childCount: _listLenght,
+            addAutomaticKeepAlives: addAutomaticKeepAlives,
+            addRepaintBoundaries: addRepaintBoundaries,
+            addSemanticIndexes: addSemanticIndexes,
+          ),
+        );
+      }
     } else if (reorderableList) {
-      child = ReorderableListView(
+      child = ReorderableListView.builder(
+        itemBuilder: (context, index) {
+          return _generateListBuilder(resource, _topWidgets, index);
+        },
+        itemCount: _listLenght,
         onReorder: onReorder ?? (a, b) {},
         shrinkWrap: shrinkWrap,
         padding: padding,
@@ -174,6 +191,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
         restorationId: restorationId,
         clipBehavior: clipBehavior,
         primary: primary,
+        proxyDecorator: _proxyDecorator,
         header: _topWidgets.length == 1
             ? _topWidgets.first
             : scrollDirection == Axis.vertical
@@ -185,10 +203,13 @@ class ListViewResourceWidget<T> extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: _topWidgets,
                   ),
-        children: list,
       );
     } else {
-      child = ListView(
+      child = ListView.builder(
+        itemBuilder: (context, index) {
+          return _generateListBuilder(resource, _topWidgets, index);
+        },
+        itemCount: _listLenght,
         padding: padding,
         scrollDirection: scrollDirection,
         reverse: reverse,
@@ -206,7 +227,6 @@ class ListViewResourceWidget<T> extends StatelessWidget {
         keyboardDismissBehavior: keyboardDismissBehavior,
         restorationId: restorationId,
         clipBehavior: clipBehavior,
-        children: list,
       );
     }
     if (refresh != null && !useSliver) {
@@ -218,58 +238,194 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     return child;
   }
 
-  List<Widget> _generateList(
-    Resource<List<T>> resource,
-    List<Widget> topWidgets,
-  ) {
-    var listWidgets = <Widget>[];
-    if (resource.data != null) {
-      listWidgets = (resource.data ?? []).map<Widget>(tileMapper).toList();
-      if (separatorBuilder != null) {
-        listWidgets = listWidgets
-            .asMap()
-            .map((index, child) {
-              return MapEntry(index, separatorBuilder!(index, child));
-            })
-            .values
-            .toList();
-      }
+  int get _listLenght {
+    var lenght = 0;
+
+    if (!reorderableList) {
+      lenght += topWidgets?.length ?? 0;
     }
+
     switch (resource.status) {
       case Status.loading:
-        for (var i = 0; i < loadingTileQuantity; i++) {
-          if(loadingTile != null) {
-            listWidgets.add(loadingTile!);
-          }
-          if(loadingTileBuilder != null) {
-            listWidgets.add(loadingTileBuilder!());
-          }
+        lenght += loadingTileQuantity;
+        break;
+      case Status.success:
+        if (emptyWidget != null &&
+            (resource.data == null || (resource.data ?? []).isEmpty)) {
+          lenght++;
+        } else {
+          lenght += resource.data?.length ?? 0;
+        }
+        break;
+      case Status.failed:
+        lenght++;
+        break;
+      default:
+        break;
+    }
+
+    return lenght;
+  }
+
+  Widget _generateListBuilder(
+    Resource<List<T>> resource,
+    List<Widget> topWidgets,
+    int index,
+  ) {
+    final data = resource.data ?? [];
+
+    if (!reorderableList) {
+      if (index < topWidgets.length) {
+        return topWidgets[index];
+      }
+
+      index = index - topWidgets.length;
+    }
+
+    switch (resource.status) {
+      case Status.loading:
+        if (loadingTile != null) {
+          return loadingTile!;
+        }
+        if (loadingTileBuilder != null) {
+          return loadingTileBuilder!();
         }
         break;
       case Status.success:
         if (emptyWidget != null &&
             (resource.data == null || (resource.data ?? []).isEmpty)) {
-          listWidgets.add(emptyWidget ?? const SizedBox.shrink());
+          return emptyWidget ?? const SizedBox.shrink();
         }
-        break;
+        final widget = tileMapper(data[index]);
+        if (separatorBuilder != null) {
+          return separatorBuilder!(index, widget);
+        }
+        return widget;
       case Status.failed:
-        listWidgets.add(
-          errorWidget != null
-              ? errorWidget!(resource.error ?? const AppException())
-              : DefaultErrorWidget(
-                  resource.message,
-                  onTryAgain: refresh,
-                  textTryAgain: textTryAgain,
-                  key: UniqueKey(),
-                ),
-        );
-        break;
+        return errorWidget != null
+            ? errorWidget!(resource.error ?? const AppException())
+            : DefaultErrorWidget(
+                resource.message,
+                onTryAgain: refresh,
+                textTryAgain: textTryAgain,
+                key: UniqueKey(),
+              );
       default:
         break;
     }
-    if (!reorderableList) {
-      listWidgets.insertAll(0, topWidgets);
-    }
-    return listWidgets;
+    return const SizedBox.shrink();
   }
+
+  Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (BuildContext context, Widget? child) {
+        final animValue = Curves.easeInOut.transform(animation.value);
+        final elevation = lerpDouble(0, 6, animValue)!;
+        return Material(
+          elevation: elevation,
+          child: child,
+        );
+      },
+      child: child,
+    );
+  }
+
+  Widget _itemBuilder(BuildContext context, int index) {
+    final item = _generateListBuilder(resource, topWidgets ?? [], index);
+    assert(() {
+      if (item.key == null) {
+        throw FlutterError(
+          'Every item of ReorderableListView must have a key.',
+        );
+      }
+      return true;
+    }());
+
+    // TODO(goderbauer): The semantics stuff should probably happen inside
+    //   _ReorderableItem so the widget versions can have them as well.
+    final itemGlobalKey = _ReorderableListViewChildGlobalKey(item.key!, this);
+
+    switch (Theme.of(context).platform) {
+      case TargetPlatform.linux:
+      case TargetPlatform.windows:
+      case TargetPlatform.macOS:
+        switch (scrollDirection) {
+          case Axis.horizontal:
+            return Stack(
+              key: itemGlobalKey,
+              children: <Widget>[
+                item,
+                Positioned.directional(
+                  textDirection: Directionality.of(context),
+                  start: 0,
+                  end: 0,
+                  bottom: 8,
+                  child: Align(
+                    alignment: AlignmentDirectional.bottomCenter,
+                    child: ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(Icons.drag_handle),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          case Axis.vertical:
+            return Stack(
+              key: itemGlobalKey,
+              children: <Widget>[
+                item,
+                Positioned.directional(
+                  textDirection: Directionality.of(context),
+                  top: 0,
+                  bottom: 0,
+                  end: 8,
+                  child: Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(Icons.drag_handle),
+                    ),
+                  ),
+                ),
+              ],
+            );
+        }
+
+      case TargetPlatform.iOS:
+      case TargetPlatform.android:
+      case TargetPlatform.fuchsia:
+        return ReorderableDelayedDragStartListener(
+          key: itemGlobalKey,
+          index: index,
+          child: item,
+        );
+    }
+  }
+}
+
+// A global key that takes its identity from the object and uses a value of a
+// particular type to identify itself.
+//
+// The difference with GlobalObjectKey is that it uses [==] instead of [identical]
+// of the objects used to generate widgets.
+@optionalTypeArgs
+class _ReorderableListViewChildGlobalKey extends GlobalObjectKey {
+  const _ReorderableListViewChildGlobalKey(this.subKey, this.state)
+      : super(subKey);
+
+  final Key subKey;
+  final StatelessWidget state;
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) return false;
+    return other is _ReorderableListViewChildGlobalKey &&
+        other.subKey == subKey &&
+        other.state == state;
+  }
+
+  @override
+  int get hashCode => hashValues(subKey, state);
 }
