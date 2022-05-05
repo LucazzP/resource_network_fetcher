@@ -247,7 +247,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
 
     switch (resource.status) {
       case Status.loading:
-        lenght += loadingTileQuantity;
+        lenght += (resource.data ?? []).length + loadingTileQuantity;
         break;
       case Status.success:
         if (emptyWidget != null &&
