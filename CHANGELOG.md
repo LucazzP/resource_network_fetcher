@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2022-05-27
+
+- Fixed sink loading with streams
+
 ## [1.1.0] - 2021-12-07
 
 - Improved list performance
