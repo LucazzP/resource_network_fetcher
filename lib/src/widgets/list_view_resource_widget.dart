@@ -247,7 +247,7 @@ class ListViewResourceWidget<T> extends StatelessWidget {
 
     switch (resource.status) {
       case Status.loading:
-        lenght += loadingTileQuantity;
+        lenght += (resource.data ?? []).length + loadingTileQuantity;
         break;
       case Status.success:
         if (emptyWidget != null &&
@@ -285,10 +285,10 @@ class ListViewResourceWidget<T> extends StatelessWidget {
     switch (resource.status) {
       case Status.loading:
         if (loadingTile != null) {
-          return loadingTile!;
+          return _handleLoadingState(index, data, loadingTile!);
         }
         if (loadingTileBuilder != null) {
-          return loadingTileBuilder!();
+          return _handleLoadingState(index, data, loadingTileBuilder!());
         }
         break;
       case Status.success:
@@ -314,6 +314,21 @@ class ListViewResourceWidget<T> extends StatelessWidget {
         break;
     }
     return const SizedBox.shrink();
+  }
+
+  Widget _handleLoadingState(int index, List<T> data, Widget returnableLoadingWidget) {
+    final _maxIndexForPopulatedDataArray = data.length - 1;
+    final _shouldReturnEmptyWidget = emptyWidget != null &&
+        (resource.data == null || (resource.data ?? []).isEmpty);
+
+    if (index > _maxIndexForPopulatedDataArray) return returnableLoadingWidget;
+    if (_shouldReturnEmptyWidget) return emptyWidget ?? const SizedBox.shrink();
+    
+    final widget = tileMapper(data[index]);
+    if (separatorBuilder != null) {
+      return separatorBuilder!(index, widget);
+    }
+    return widget;
   }
 
   Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {
