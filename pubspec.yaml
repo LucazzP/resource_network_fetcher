@@ -6,7 +6,7 @@ repository: https://github.com/LucazzP/resource_network_fetcher
 issue_tracker: https://github.com/LucazzP/resource_network_fetcher/issues
 
 environment:
-  sdk: ">=3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
   flutter: ">=3.0.0"
 
 dependencies:
