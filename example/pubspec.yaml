@@ -18,18 +18,19 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=3.0.0"
 
 dependencies:
-  dio: ^4.0.0
+  dio: ^5.9.0
   flutter:
     sdk: flutter
   resource_network_fetcher:
     path: ../
-  cupertino_icons: ^1.0.3
-  shimmer: ^2.0.0
+  cupertino_icons: ^1.0.8
+  shimmer: ^3.0.0
 
 dev_dependencies:
+  lints: any
   flutter_test:
     sdk: flutter
 

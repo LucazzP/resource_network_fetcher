@@ -2,34 +2,36 @@ import 'package:dio/dio.dart';
 import 'package:resource_network_fetcher/resource_network_fetcher.dart';
 
 abstract class ErrorMapper {
-  static AppException from(dynamic e) {
-    switch (e.runtimeType) {
-      case AppException:
+  static NetworkException from(dynamic e, StackTrace? stackTrace) {
+    switch (e) {
+      case NetworkException():
         return e;
-      case DioError:
-        return AppException(
+      case DioException():
+        return NetworkException(
           exception: e,
           message: _dioError(e),
+          stackTrace: stackTrace,
         );
       default:
-        return AppException(
+        return NetworkException(
           exception: e,
           message: e.toString(),
+          stackTrace: stackTrace,
         );
     }
   }
 
-  static String _dioError(DioError error) {
+  static String _dioError(DioException error) {
     switch (error.type) {
-      case DioErrorType.sendTimeout:
-      case DioErrorType.connectTimeout:
-      case DioErrorType.receiveTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.receiveTimeout:
+      case DioExceptionType.connectionError:
         return "Connection failure, verify your internet";
-      case DioErrorType.cancel:
+      case DioExceptionType.cancel:
         return "Canceled request";
-      case DioErrorType.response:
-      case DioErrorType.other:
       default:
+        break;
     }
     if (error.response?.statusCode != null) {
       switch (error.response!.statusCode) {

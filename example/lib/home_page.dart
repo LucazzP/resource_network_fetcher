@@ -6,7 +6,7 @@ import 'home_controller.dart';
 import 'todo.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({Key? key, required this.title}) : super(key: key);
+  HomePage({super.key, required this.title});
   final String title;
   final controller = HomeController();
 
@@ -20,6 +20,12 @@ class _MyHomePageState extends State<HomePage> {
   }
 
   void onPressed() {
+    widget.controller.getListTodos();
+  }
+
+  @override
+  void initState() {
+    super.initState();
     widget.controller.getListTodos();
   }
 
@@ -42,11 +48,14 @@ class _MyHomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: ValueListenableBuilder(
-        valueListenable: widget.controller.listTodos,
-        builder: (context, Resource<List<Todo>> value, child) {
+      body: AnimatedBuilder(
+        animation: Listenable.merge([widget.controller.listTodos, widget.controller.checkedTodos]),
+        builder: (context, child) {
+          final todosResource = widget.controller.listTodos.value;
+          final checkedTodos = widget.controller.checkedTodos.value;
+          
           return ListViewResourceWidget<Todo>(
-            resource: value,
+            resource: todosResource,
             loadingTileQuantity: 2,
             refresh: widget.controller.getListTodos,
             loadingTile: Shimmer.fromColors(
@@ -64,8 +73,8 @@ class _MyHomePageState extends State<HomePage> {
             ),
             tileMapper: (data) => CheckboxListTile(
               title: Text(data.title),
-              value: data.completed,
-              onChanged: (value) {},
+              value: checkedTodos[data.id.toString()] ?? data.completed,
+              onChanged: (value) => widget.controller.checkTodo(data.id.toString(), value ?? false),
             ),
           );
         },

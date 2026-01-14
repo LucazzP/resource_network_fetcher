@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-01-14
+
+- [BREAKING CHANGE] Renamed AppException to NetworkException
+- Added stack trace to NetworkException and error mapper
+- Updated package SDK constraints to 3.0.0
+- Added dart-doc to all public classes and functions
+- Formatted code with dart format
+- Updated example with the latest flutter version
+- Added unit tests for the package
+
 ## [1.1.1] - 2022-05-27
 
 - Fixed sink loading with streams
@@ -22,11 +32,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2021-05-26
 
-### Added
-
 - Initial version of the package.
-- Thanks to [Lucas Polazzo](https://gitlab.com/LucazzP) that made
-  this first version of the package!
-
-[Unreleased]: https://gitlab.com/snowman-labs/flutter-devs/project_base_snow/-/compare/master...v0.1.0
-[0.1.0]: https://gitlab.com/snowman-labs/flutter-devs/project_base_snow/-/tags/v0.1.0
